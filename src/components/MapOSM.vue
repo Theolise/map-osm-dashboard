@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, toRef } from 'vue'
 import L, { LatLngExpression, LayerGroup, Map } from 'leaflet'
+import { cellToLatLng } from 'h3-js' // Bibliothèque pour convertir H3 en coordonnées géographiques
+import Papa from 'papaparse'
 
 import { getMapData } from '@/services/overpassTurbo'
 import { getPopupInfo, getQueryForArea, getQueryForTreeByBounds } from '@/utils/osm'
@@ -18,6 +20,9 @@ const debounceDelayUpdateTree = 300
 const map = ref<Map | null>(null)
 const markersGroupArea = ref<LayerGroup | null>(null)
 const markersGroupTree = ref<LayerGroup | null>(null)
+const markersGroupHeat = ref<LayerGroup | null>(null)
+const heatData = ref<{ lat: number; lon: number; temperature: number }[]>([])
+const isHeatDataLoaded = ref(false)
 
 const areasRef = toRef(props, 'areas')
 
@@ -26,6 +31,70 @@ let debounceTimeout: ReturnType<typeof setTimeout> | null = null
 const queryAreas = computed<string>(() => {
   return getQueryForArea(props.areas)
 })
+
+const queryHeatData = async () => {
+  if (isHeatDataLoaded.value) return
+
+  try {
+    const response = await fetch('/lst_paris_2022.csv')
+    const csvText = await response.text()
+
+    let rowCount = 0
+
+    Papa.parse(csvText, {
+      header: false,
+      skipEmptyLines: true,
+      chunkSize: 1000,
+      chunk: (results, parser) => {
+        const rows = results.data
+
+        rows.forEach((row: any) => {
+          if (rowCount >= 1000) {
+            parser.abort()
+            return
+          }
+
+          const h3Index = row[0]
+          const lst = parseFloat(row[1])
+
+          if (h3Index && !isNaN(lst)) {
+            const [lat, lon] = cellToLatLng(h3Index)
+            heatData.value.push({ lat, lon, temperature: lst })
+            rowCount++
+          }
+        })
+      },
+      complete: () => {
+        console.log(`Parsing terminé après ${rowCount} lignes.`)
+        isHeatDataLoaded.value = true
+        updateHeatMarkers()
+      },
+      error: (error) => {
+        console.error('Erreur lors du parsing du fichier CSV:', error)
+      },
+    })
+  } catch (error) {
+    console.error('Erreur lors de la lecture du fichier CSV:', error)
+  }
+}
+
+const updateHeatMarkers = () => {
+  if (!map.value) return
+
+  heatData.value.forEach((data) => {
+    const { lat, lon, temperature } = data
+    const color = temperature > 30 ? 'red' : temperature > 20 ? 'orange' : 'yellow'
+
+    const marker = L.circle([lat, lon], {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.5,
+      radius: 10,
+    }).bindPopup(`Température : ${temperature}°C`)
+
+    markersGroupHeat.value?.addLayer(marker)
+  })
+}
 
 const initMap = () => {
   map.value = L.map('map').setView([48.8566, 2.3522], 13)
@@ -37,11 +106,13 @@ const initMap = () => {
 
   markersGroupArea.value = L.layerGroup().addTo(map.value as Map)
   markersGroupTree.value = L.layerGroup().addTo(map.value as Map)
+  markersGroupHeat.value = L.layerGroup().addTo(map.value as Map)
 
   map.value.on('moveend', handleMapChange)
   map.value.on('zoomend', handleMapChange)
 
   fetchAreaData()
+  queryHeatData() // Charger les données d'îlots de chaleur au démarrage
 }
 
 const fetchTreeData = async (bounds: L.LatLngBounds): Promise<Element[]> => {
