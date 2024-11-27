@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import { AREAS } from '@/constants/areas'
 import { arrondissementsParis } from '@/constants/wikidata'
 import { getMapData } from '@/services/overpassTurbo'
-import type { ArrondissementDetail } from '@/types/stats'
-import { getQueryForTreeByWikidata } from '@/utils/osm'
+import type { Area } from '@/types/areas'
+import type { ArrondissementDetail, ChartData } from '@/types/stats'
+import { getQueryForArea, getQueryForTreeByWikidata } from '@/utils/osm'
+import { loadAndCacheData } from '@/utils/stats'
 import { isDataValid } from '@/utils/stats'
 
-import Loader from '@/components/Loader.vue'
 import Bar from '@/components/charts/Bar.vue'
-import { type ChartData, type SavedStat } from '@/types/stats'
+import Doughnut from '@/components/charts/Doughnut.vue'
+import Loader from '@/components/Loader.vue'
 
 const STORAGE_KEY_TREE = 'treeByArrondissement'
+const STORAGE_KEY_AREA = 'areaByTypeCount'
 
 const treeByArrondissement = ref<ChartData>({
   labels: [],
@@ -25,6 +29,16 @@ const treeByArrondissement = ref<ChartData>({
     },
   ],
 })
+const areaByTypeCount = ref<ChartData>({
+  labels: [],
+  datasets: [
+    {
+      label: 'Areas repartition by type',
+      backgroundColor: [],
+      data: [] as number[],
+    },
+  ],
+})
 
 const getTreeByArrondissement = async (arrondissement: ArrondissementDetail) => {
   const data = await getMapData(getQueryForTreeByWikidata(arrondissement.wikidata))
@@ -34,15 +48,18 @@ const getTreeByArrondissement = async (arrondissement: ArrondissementDetail) => 
   }
 }
 
-const loadTreeData = async () => {
-  const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY_TREE) || '{}') as SavedStat
+const getAreaByTypeCount = async (area: Area) => {
+  const data = await getMapData(getQueryForArea([area]))
+  return {
+    label: area.label,
+    count: data.elements.length,
+  }
+}
 
-  if (isDataValid(savedData)) {
-    treeByArrondissement.value.labels = savedData.labels
-    treeByArrondissement.value.datasets[0].data = savedData.data
-  } else {
-    const labels = []
-    const data = []
+const loadTreeData = async () => {
+  const data = await loadAndCacheData(STORAGE_KEY_TREE, isDataValid, async () => {
+    const labels: string[] = []
+    const data: number[] = []
 
     for (const arrondissement of arrondissementsParis) {
       const result = await getTreeByArrondissement(arrondissement)
@@ -50,15 +67,37 @@ const loadTreeData = async () => {
       data.push(result.count)
     }
 
-    treeByArrondissement.value.labels = labels
-    treeByArrondissement.value.datasets[0].data = data
+    return { labels, data }
+  })
 
-    localStorage.setItem(STORAGE_KEY_TREE, JSON.stringify({ labels, data, timestamp: Date.now() }))
-  }
+  treeByArrondissement.value.labels = data.labels
+  treeByArrondissement.value.datasets[0].data = data.data
+}
+
+const loadAreaData = async () => {
+  const data = await loadAndCacheData(STORAGE_KEY_AREA, isDataValid, async () => {
+    const labels: string[] = []
+    const backgroundColor: string[] = []
+    const data: number[] = []
+
+    for (const area of AREAS) {
+      const result = await getAreaByTypeCount(area)
+      labels.push(result.label)
+      backgroundColor.push(area.color)
+      data.push(result.count)
+    }
+
+    return { labels, data, backgroundColor }
+  })
+
+  areaByTypeCount.value.labels = data.labels
+  areaByTypeCount.value.datasets[0].backgroundColor = data.backgroundColor || []
+  areaByTypeCount.value.datasets[0].data = data.data
 }
 
 onMounted(() => {
   loadTreeData()
+  loadAreaData()
 })
 </script>
 
@@ -70,7 +109,16 @@ onMounted(() => {
         v-if="treeByArrondissement.labels.length === arrondissementsParis.length"
         :data="treeByArrondissement"
       />
-      <Loader v-else />
+      <div v-else class="loader-container">
+        <Loader />
+      </div>
+    </div>
+    <div class="card">
+      <span>Répartition des espaces verts par type</span>
+      <Doughnut v-if="areaByTypeCount.labels.length > 0" :data="areaByTypeCount" />
+      <div v-else class="loader-container">
+        <Loader />
+      </div>
     </div>
   </div>
 </template>
@@ -96,6 +144,14 @@ onMounted(() => {
     canvas {
       height: auto;
       max-height: 350px;
+    }
+
+    .loader-container {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   }
 }

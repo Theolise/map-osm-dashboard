@@ -8,3 +8,19 @@ export const isDataValid = (savedData: SavedStat) => {
   }
   return Date.now() - savedData.timestamp < EXPIRATION_TIME
 }
+
+export const loadAndCacheData = async (
+  storageKey: string,
+  isValid: (data: SavedStat) => boolean,
+  loadFn: () => Promise<{ labels: string[]; data: number[]; backgroundColor?: string[] }>,
+): Promise<{ labels: string[]; data: number[]; backgroundColor?: string[] }> => {
+  const savedData = JSON.parse(localStorage.getItem(storageKey) || '{}') as SavedStat
+
+  if (isValid(savedData)) {
+    return savedData
+  }
+
+  const newData = await loadFn()
+  localStorage.setItem(storageKey, JSON.stringify({ ...newData, timestamp: Date.now() }))
+  return newData
+}

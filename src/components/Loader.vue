@@ -4,6 +4,7 @@
 
 <style scoped>
 .loader {
+  display: block;
   color: #ffffff;
   font-size: 45px;
   text-indent: -9999em;
