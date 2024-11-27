@@ -140,7 +140,7 @@ watch(areasRef, () => {
 
 <template>
   <div style="width: 70%">
-    <div id="map" style="height: 500px; width: 100%; border-radius: 20px"></div>
+    <div id="map" data-testId="map" style="height: 500px; width: 100%; border-radius: 20px"></div>
     <p class="info">Zoom on the map to load the trees in the selected area</p>
   </div>
 </template>
