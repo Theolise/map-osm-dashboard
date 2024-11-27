@@ -164,7 +164,7 @@ watch(areasRef, () => {
 
 <template>
   <div style="width: 70%">
-    <div id="map" style="height: 500px; width: 100%; border-radius: 20px"></div>
+    <div id="map" data-testId="map" style="height: 500px; width: 100%; border-radius: 20px"></div>
     <div class="info-container">
       <p class="info">Zoomer sur la carte pour charger les arbres de la zone sélectionnée</p>
       <p v-if="loading">Chargement ...</p>

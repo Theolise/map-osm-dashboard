@@ -1,5 +1,5 @@
 <template>
-  <span class="loader"></span>
+  <span data-testId="loader" class="loader"></span>
 </template>
 
 <style scoped>
