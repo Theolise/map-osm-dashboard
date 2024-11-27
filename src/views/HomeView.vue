@@ -7,6 +7,7 @@ import { isSelected } from '@/utils/filter'
 
 import Filters from '@/components/Filters.vue'
 import MapOSM from '@/components/MapOSM.vue'
+import Stats from '@/components/Stats.vue'
 
 const areasSelected = ref(AREAS)
 
@@ -31,6 +32,8 @@ const toggleFilter = (filter: Area) => {
 
         <Filters :areas="areasSelected" @toggle-filter="toggleFilter" />
       </div>
+
+      <Stats />
     </div>
   </main>
 </template>

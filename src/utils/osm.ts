@@ -51,6 +51,15 @@ export const getQueryForTreeByBounds = (bounds: L.LatLngBounds): string => {
   `
 }
 
+export const getQueryForTreeByWikidata = (wikidata: string) => {
+  return `[out:json];
+  area["wikidata"="${wikidata}"]->.searchArea;
+  (
+    node["natural"="tree"](area.searchArea);
+  );
+  out geom;`
+}
+
 export const getPopupInfo = (id: string, tags: Tag) => {
   let detail = ''
   for (const [key, tag] of Object.entries(tags)) {
