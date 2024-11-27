@@ -1,0 +1,8 @@
+body {
+  min-height: 100vh;
+  color: #f6f6f6;
+  background-color: #1e1e2f;
+  font-size: 16px;
+  font-family: Poppins, sans-serif;
+  margin-bottom: 40px;
+}
