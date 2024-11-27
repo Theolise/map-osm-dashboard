@@ -36,6 +36,21 @@ export const getQueryForArea = (areas: Area[]) => {
   return query
 }
 
+export const getQueryForTreeByBounds = (bounds: L.LatLngBounds): string => {
+  const south = bounds.getSouth()
+  const west = bounds.getWest()
+  const north = bounds.getNorth()
+  const east = bounds.getEast()
+
+  return `
+    [out:json][timeout:25];
+    (
+      node["natural"="tree"](${south},${west},${north},${east});
+    );
+    out geom;
+  `
+}
+
 export const getPopupInfo = (id: string, tags: Tag) => {
   let detail = ''
   for (const [key, tag] of Object.entries(tags)) {
