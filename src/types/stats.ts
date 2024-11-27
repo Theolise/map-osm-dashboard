@@ -12,9 +12,9 @@ export type ChartData = {
 type DataSet = {
   label: string
   data: number[]
-  borderColor: string
-  backgroundColor: string
-  borderWidth: number
+  borderColor?: string
+  backgroundColor?: string | string[]
+  borderWidth?: number
 }
 
 export type ArrondissementDetail = {
