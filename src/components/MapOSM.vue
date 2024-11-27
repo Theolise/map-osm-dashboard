@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, toRef } from 'vue'
 import L, { LatLngExpression, LayerGroup, Map } from 'leaflet'
 
 import { getMapData } from '@/services/overpassTurbo'
@@ -11,8 +11,14 @@ const props = defineProps<{
   areas: Area[]
 }>()
 
+const debounceDelayFilters = 1500
+
 const map = ref<Map | null>(null)
 const markersGroup = ref<LayerGroup | null>(null)
+
+const areasRef = toRef(props, 'areas')
+
+let debounceTimeout: ReturnType<typeof setTimeout> | null = null
 
 const queryAreas = computed<string>(() => {
   return getQueryForArea(props.areas)
@@ -82,6 +88,13 @@ const fetchOverpassData = async () => {
 
 onMounted(() => {
   initMap()
+})
+
+watch(areasRef, () => {
+  if (debounceTimeout) clearTimeout(debounceTimeout)
+  debounceTimeout = setTimeout(() => {
+    fetchOverpassData()
+  }, debounceDelayFilters)
 })
 </script>
 

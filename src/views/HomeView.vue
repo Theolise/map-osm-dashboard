@@ -2,10 +2,23 @@
 import { ref } from 'vue'
 
 import { AREAS } from '@/constants/areas'
+import type { Area } from '@/types/areas'
+import { isSelected } from '@/utils/filter'
 
+import Filters from '@/components/Filters.vue'
 import MapOSM from '@/components/MapOSM.vue'
 
 const areasSelected = ref(AREAS)
+
+const toggleFilter = (filter: Area) => {
+  if (isSelected(filter, areasSelected.value)) {
+    areasSelected.value = areasSelected.value.filter(
+      (selected) => selected.type !== filter.type || selected.label !== filter.label,
+    )
+  } else {
+    areasSelected.value = [...areasSelected.value, filter]
+  }
+}
 </script>
 
 <template>
@@ -15,6 +28,8 @@ const areasSelected = ref(AREAS)
     <div class="dashboard">
       <div class="map">
         <MapOSM :areas="areasSelected" />
+
+        <Filters :areas="areasSelected" @toggle-filter="toggleFilter" />
       </div>
     </div>
   </main>
