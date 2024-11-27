@@ -28,7 +28,11 @@ describe('Stats', () => {
   it('displays loaders when no valid data is in localStorage', async () => {
     const { isDataValid, loadAndCacheData } = await import('@/utils/stats')
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     isDataValid.mockReturnValue(false)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     loadAndCacheData.mockResolvedValue({
       labels: [],
       data: [],
@@ -47,7 +51,11 @@ describe('Stats', () => {
     }
     const { isDataValid, loadAndCacheData } = await import('@/utils/stats')
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     isDataValid.mockReturnValue(true)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     loadAndCacheData.mockImplementation(async () => {
       return mockData
     })

@@ -4,7 +4,7 @@ import HomeView from '@/views/HomeView.vue'
 
 <template>
   <header>
-    <img alt="leaf logo" src="`/leaf.svg`" width="20" height="20" />
+    <img alt="leaf logo" src="/leaf.svg" width="20" height="20" />
     <p>VégétationInTheCity</p>
   </header>
 
