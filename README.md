@@ -1,45 +1,49 @@
 # map-osm-dashboard
 
-This template should help get you started developing with Vue 3 in Vite.
+## Run project
 
-## Recommended IDE Setup
+Vous pouvez lancer le projet via Docker pour éviter de devoir installer les dépendances sur votre machine.
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+Build de l'image Docker :  
+`docker build -t map-osm-dashboard .`
 
-## Type Support for `.vue` Imports in TS
+Run le docker :  
+`docker run -p 8080:80 map-osm-dashboard`
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+Le projet est accessible sur :  
+`localhost:8080`
 
-## Customize configuration
+## Architecture projet
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+Le projet est composé d'une vue principale : HomeView.
+Cette vue instancie trois composants : MapOSM, Filters, Stats.
 
-## Project Setup
+### MapOSM
 
-```sh
-npm install
-```
+MapOSM affiche la carte interactive et gère l'ajout des différents marqueurs sur la carte.
+Il y a trois layers pour chaque types de marqueurs : espaces verts, arbres et ilots de chaleur.  
+L'affichage des marqueurs arbres se fait au zoom sur la map pour réduire le nombre de marqueurs à charger et afficher simultanément.  
+Pour l'affichage des ilots de chaleur, une première version se limite au 1000 premières données du fichier csv.
 
-### Compile and Hot-Reload for Development
+### Filters
 
-```sh
-npm run dev
-```
+Filters permet à l'utilisateur de sélectionner les types d'espaces verts qu'il souhaite afficher sur la carte.
 
-### Type-Check, Compile and Minify for Production
+### Stats
 
-```sh
-npm run build
-```
+Avec ce composant, on propose deux graphiques qui présentent des statistiques liées aux données espaces verts et arbres.
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## Dépendances utilisées
 
-```sh
-npm run test:unit
-```
+### Carte OSM
 
-### Lint with [ESLint](https://eslint.org/)
+- Leaflet : ^1.9.4
 
-```sh
-npm run lint
-```
+### Graphiques
+
+- vue-charjs : ^5.3.2
+- Chart.js : ^4.4.6
+
+### CSV
+
+- Papa Parse : ^5.4.1
