@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch, toRef } from 'vue'
 import L, { type LatLngExpression, LayerGroup, Map } from 'leaflet'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import 'leaflet.markercluster'
 import { cellToLatLng } from 'h3-js'
 import Papa from 'papaparse'
 
@@ -21,6 +24,7 @@ const map = ref<Map | null>(null)
 const markersGroupArea = ref<LayerGroup | null>(null)
 const markersGroupTree = ref<LayerGroup | null>(null)
 const markersGroupHeat = ref<LayerGroup | null>(null)
+const markers = ref<MarkerClusterGroup | null>(null)
 const heatData = ref<{ lat: number; lon: number; temperature: number }[]>([])
 const isHeatDataLoaded = ref(false)
 
@@ -46,14 +50,14 @@ const queryHeatData = async () => {
     Papa.parse(csvText, {
       header: false,
       skipEmptyLines: true,
-      chunkSize: 1000,
+      chunkSize: 100000,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       chunk: (results, parser) => {
         const rows = results.data
 
         rows.forEach((row: string[]) => {
-          if (rowCount >= 1000) {
+          if (rowCount >= 100000) {
             parser.abort()
             return
           }
@@ -64,6 +68,18 @@ const queryHeatData = async () => {
           if (h3Index && !isNaN(lst)) {
             const [lat, lon] = cellToLatLng(h3Index)
             heatData.value.push({ lat, lon, temperature: lst })
+            // const { lat, lon, temperature } = data
+            const color = lst > 30 ? 'red' : lst > 20 ? 'orange' : 'yellow'
+
+            const marker = L.circle([lat, lon], {
+              color: color,
+              fillColor: color,
+              fillOpacity: 0.5,
+              radius: 10,
+            }).bindPopup(`Température : ${lst}°C`)
+
+            markers.value?.addLayer(marker)
+
             rowCount++
           }
         })
@@ -71,7 +87,8 @@ const queryHeatData = async () => {
       complete: () => {
         console.log(`Parsing terminé après ${rowCount} lignes.`)
         isHeatDataLoaded.value = true
-        updateHeatMarkers()
+        // map.value?.addLayer(markers)
+        // updateHeatMarkers()
       },
       error: (error: string) => {
         console.error('Erreur lors du parsing du fichier CSV:', error)
@@ -110,12 +127,13 @@ const initMap = () => {
 
   markersGroupArea.value = L.layerGroup().addTo(map.value as Map)
   markersGroupTree.value = L.layerGroup().addTo(map.value as Map)
-  markersGroupHeat.value = L.layerGroup().addTo(map.value as Map)
-
+  // markersGroupHeat.value = L.layerGroup().addTo(map.value as Map)
+  // @ts-ignore
+  markers.value = L.markerClusterGroup().addTo(map.value as Map)
   map.value.on('moveend', handleMapChange)
   map.value.on('zoomend', handleMapChange)
 
-  fetchAreaData()
+  // fetchAreaData()
   queryHeatData() // Charger les données d'îlots de chaleur au démarrage
 }
 
